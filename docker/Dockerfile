@@ -40,14 +40,10 @@ RUN cd apps/block_scout_web/assets/ && \
 
 RUN cd apps/explorer/ && \
     npm install && \
-<<<<<<< Updated upstream
     cd -
 
 # RUN mix do ecto.drop --force, ecto.create, ecto.migrate
 
-=======
-    apk del --force-broken-world alpine-sdk gmp-dev automake libtool inotify-tools autoconf python
->>>>>>> Stashed changes
 # USER default
 
 CMD sleep 3 && \
