@@ -6,7 +6,7 @@ defmodule Indexer.Supervisor do
   use Supervisor
 
   alias Indexer.Block
-  alias Indexer.Block.{Catchup, Realtime}
+  alias Indexer.Block.Catchup
 
   alias Indexer.Fetcher.{
     BlockReward,
@@ -68,8 +68,6 @@ defmodule Indexer.Supervisor do
 
     %{
       block_interval: block_interval,
-      realtime_overrides: realtime_overrides,
-      subscribe_named_arguments: subscribe_named_arguments
     } = named_arguments
 
     metadata_updater_inverval = Application.get_env(:indexer, :metadata_updater_days_interval)
@@ -79,23 +77,11 @@ defmodule Indexer.Supervisor do
       |> Map.drop(~w(block_interval blocks_concurrency memory_monitor subscribe_named_arguments realtime_overrides)a)
       |> Block.Fetcher.new()
 
-    realtime_block_fetcher =
-      named_arguments
-      |> Map.drop(~w(block_interval blocks_concurrency memory_monitor subscribe_named_arguments realtime_overrides)a)
-      |> Map.merge(Enum.into(realtime_overrides, %{}))
-      |> Block.Fetcher.new()
-
-    realtime_subscribe_named_arguments = realtime_overrides[:subscribe_named_arguments] || subscribe_named_arguments
 
     Supervisor.init(
       [
         # Root fetchers
         {PendingTransaction.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments]]},
-        {Realtime.Supervisor,
-         [
-           %{block_fetcher: realtime_block_fetcher, subscribe_named_arguments: realtime_subscribe_named_arguments},
-           [name: Realtime.Supervisor]
-         ]},
         {Catchup.Supervisor,
          [
            %{block_fetcher: block_fetcher, block_interval: block_interval, memory_monitor: memory_monitor},

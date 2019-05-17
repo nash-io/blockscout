@@ -17,10 +17,10 @@ defmodule Indexer.Fetcher.ContractCode do
 
   @behaviour BufferedTask
 
-  @max_batch_size 10
-  @max_concurrency 4
+  @max_batch_size 1
+  @max_concurrency 1
   @defaults [
-    flush_interval: :timer.seconds(3),
+    flush_interval: :timer.seconds(10),
     max_concurrency: @max_concurrency,
     max_batch_size: @max_batch_size,
     task_supervisor: Indexer.Fetcher.ContractCode.TaskSupervisor,
@@ -80,7 +80,6 @@ defmodule Indexer.Fetcher.ContractCode do
   defp params({block_number, created_contract_address_hash_bytes, _transaction_hash_bytes})
        when is_integer(block_number) do
     {:ok, created_contract_address_hash} = Hash.Address.cast(created_contract_address_hash_bytes)
-
     %{block_quantity: integer_to_quantity(block_number), address: to_string(created_contract_address_hash)}
   end
 
@@ -92,7 +91,6 @@ defmodule Indexer.Fetcher.ContractCode do
               tracer: Tracer
             )
   def run(entries, json_rpc_named_arguments) do
-    Logger.debug("fetching created_contract_code for transactions")
 
     entries
     |> Enum.map(&params/1)

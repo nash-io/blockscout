@@ -3,7 +3,7 @@ use Mix.Config
 config :indexer, Indexer.Tracer, env: "production", disabled?: true
 
 config :logger, :indexer,
-  level: :info,
+  level: :debug,
   path: Path.absname("logs/prod/indexer.log"),
   rotate: %{max_bytes: 52_428_800, keep: 19}
 
@@ -25,7 +25,7 @@ config :logger, :addresses_without_code,
 
 variant =
   if is_nil(System.get_env("ETHEREUM_JSONRPC_VARIANT")) do
-    "parity"
+    "ganache"
   else
     System.get_env("ETHEREUM_JSONRPC_VARIANT")
     |> String.split(".")
