@@ -47,6 +47,30 @@ defmodule BlockScoutWeb.TransactionViewTest do
     end
   end
 
+  describe "erc721_token_transfer/2" do
+    test "finds token transfer" do
+      from_address_hash = "0x7a30272c902563b712245696f0a81c5a0e45ddc8"
+      to_address_hash = "0xb544cead8b660aae9f2e37450f7be2ffbc501793"
+      from_address = insert(:address, hash: from_address_hash)
+      to_address = insert(:address, hash: to_address_hash)
+      block = insert(:block)
+
+      transaction =
+        insert(:transaction,
+          input:
+            "0x23b872dd0000000000000000000000007a30272c902563b712245696f0a81c5a0e45ddc8000000000000000000000000b544cead8b660aae9f2e37450f7be2ffbc5017930000000000000000000000000000000000000000000000000000000000000002",
+          value: Decimal.new(0),
+          created_contract_address_hash: nil
+        )
+        |> with_block(block, status: :ok)
+
+      token_transfer =
+        insert(:token_transfer, from_address: from_address, to_address: to_address, transaction: transaction)
+
+      assert TransactionView.erc721_token_transfer(transaction, [token_transfer]) == token_transfer
+    end
+  end
+
   describe "processing_time_duration/2" do
     test "returns :pending if the transaction has no block" do
       transaction = build(:transaction, block: nil)
@@ -159,7 +183,8 @@ defmodule BlockScoutWeb.TransactionViewTest do
         |> insert()
         |> Repo.preload(:block)
 
-      assert TransactionView.formatted_status(transaction) == "Pending"
+      status = TransactionView.transaction_status(transaction)
+      assert TransactionView.formatted_status(status) == "Pending"
     end
 
     test "with block without status (pre-Byzantium/Ethereum Class)" do
@@ -170,7 +195,8 @@ defmodule BlockScoutWeb.TransactionViewTest do
         |> insert()
         |> with_block(block, status: nil)
 
-      assert TransactionView.formatted_status(transaction) == "(Awaiting internal transactions for status)"
+      status = TransactionView.transaction_status(transaction)
+      assert TransactionView.formatted_status(status) == "(Awaiting internal transactions for status)"
     end
 
     test "with receipt with status :ok" do
@@ -181,7 +207,8 @@ defmodule BlockScoutWeb.TransactionViewTest do
         |> insert(gas: gas)
         |> with_block(gas_used: gas - 1, status: :ok)
 
-      assert TransactionView.formatted_status(transaction) == "Success"
+      status = TransactionView.transaction_status(transaction)
+      assert TransactionView.formatted_status(status) == "Success"
     end
 
     test "with block with status :error without internal transactions indexed" do
@@ -192,7 +219,8 @@ defmodule BlockScoutWeb.TransactionViewTest do
         |> insert()
         |> with_block(block, status: :error)
 
-      assert TransactionView.formatted_status(transaction) == "Error: (Awaiting internal transactions for reason)"
+      status = TransactionView.transaction_status(transaction)
+      assert TransactionView.formatted_status(status) == "Error: (Awaiting internal transactions for reason)"
     end
 
     test "with block with status :error with internal transactions indexed uses `error`" do
@@ -201,7 +229,8 @@ defmodule BlockScoutWeb.TransactionViewTest do
         |> insert()
         |> with_block(status: :error, internal_transactions_indexed_at: DateTime.utc_now(), error: "Out of Gas")
 
-      assert TransactionView.formatted_status(transaction) == "Error: Out of Gas"
+      status = TransactionView.transaction_status(transaction)
+      assert TransactionView.formatted_status(status) == "Error: Out of Gas"
     end
   end
 
