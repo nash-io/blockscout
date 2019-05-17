@@ -4,9 +4,15 @@ RUN apk --no-cache --update add automake libtool inotify-tools autoconf python
 
 EXPOSE 4000
 
-ENV PORT=4000 \
-    MIX_ENV="prod" \
-    SECRET_KEY_BASE="RMgI4C1HSkxsEjdhtGMfwAHfyT6CKWXOgzCboJflfSm4jeAlic52io05KB6mqzc5"
+ENV MIX_ENV='prod'
+ENV COIN='ETH'
+ENV ETHEREUM_JSONRPC_VARIANT='ganache'
+ENV ETHEREUM_JSONRPC_HTTP_URL='http://host.docker.internal:8545'
+ENV ETHEREUM_JSONRPC_WS_URL='ws://host.docker.internal:8545'
+
+ENV DATABASE_URL='postgresql://postgres:postgres@host.docker.internal:5432/explorer?ssl=false'
+ENV PORT=4000
+ENV SECRET_KEY_BASE="RMgI4C1HSkxsEjdhtGMfwAHfyT6CKWXOgzCboJflfSm4jeAlic52io05KB6mqzc5"
 
 # Cache elixir deps
 ADD mix.exs mix.lock ./
@@ -14,8 +20,9 @@ ADD apps/block_scout_web/mix.exs ./apps/block_scout_web/
 ADD apps/explorer/mix.exs ./apps/explorer/
 ADD apps/ethereum_jsonrpc/mix.exs ./apps/ethereum_jsonrpc/
 ADD apps/indexer/mix.exs ./apps/indexer/
+ADD _build ./_build
 
-RUN mix do deps.get, deps.compile
+RUN mix deps.get
 
 ADD . .
 
@@ -33,10 +40,16 @@ RUN cd apps/block_scout_web/assets/ && \
 
 RUN cd apps/explorer/ && \
     npm install && \
+<<<<<<< Updated upstream
     cd -
 
 # RUN mix do ecto.drop --force, ecto.create, ecto.migrate
 
+=======
+    apk del --force-broken-world alpine-sdk gmp-dev automake libtool inotify-tools autoconf python
+>>>>>>> Stashed changes
 # USER default
 
-# CMD ["mix", "phx.server"]
+CMD sleep 3 && \
+  mix do ecto.drop --force --no-compile, ecto.create --no-compile --quiet, ecto.migrate --no-compile --quiet && \
+  mix phx.server
